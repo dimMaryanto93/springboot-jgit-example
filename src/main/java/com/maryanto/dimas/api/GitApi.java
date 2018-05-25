@@ -16,18 +16,21 @@ import java.io.IOException;
 @RequestMapping("/api/git")
 public class GitApi {
 
-    @PostMapping("createProject/{projectName}")
+    @PostMapping("/createProject/{projectName}")
     public ResponseEntity createProject(@PathVariable("projectName") String projectName) {
         String gitRepository = new StringBuilder(System.getProperty("user.home"))
-                .append(File.separator).append(projectName).append(File.separator).append(".git").toString();
+                .append(File.separator).append(projectName)
+                .append(File.separator).append(".git").toString();
         FileRepositoryBuilder builder = new FileRepositoryBuilder();
         try {
             Repository repository = builder.setGitDir(new File(gitRepository))
-                    .readEnvironment() // scan environment GIT_* variables
-                    .findGitDir() // scan up the file system tree
+                    .readEnvironment()
+                    .findGitDir()
                     .build();
             repository.create(true);
             return new ResponseEntity(repository.getDirectory().getAbsolutePath(), HttpStatus.OK);
+        } catch (java.lang.IllegalStateException ilste) {
+            return new ResponseEntity(HttpStatus.CONFLICT);
         } catch (IOException e) {
             e.printStackTrace();
             return new ResponseEntity(HttpStatus.NO_CONTENT);
