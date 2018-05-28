@@ -69,9 +69,22 @@ public class GitApi {
         }
     }
 
-    @GetMapping("/logs/{projectName}")
+    @GetMapping("/directories/{projectName}")
     public ResponseEntity listDirectory(@PathVariable("projectName") String projectName) {
-        return null;
+        List<String> directories = new ArrayList<>();
+        String basePath = properties.getBaseDirectory(projectName);
+        File directory = new File(basePath);
+        File[] files = directory.listFiles();
+        for (File dir : files) {
+            if (!dir.getName().equalsIgnoreCase(".git"))
+                directories.add(dir.getName());
+        }
+
+        if (directories.isEmpty()) {
+            return new ResponseEntity(HttpStatus.NO_CONTENT);
+        } else {
+            return new ResponseEntity(directories, HttpStatus.OK);
+        }
     }
 
 

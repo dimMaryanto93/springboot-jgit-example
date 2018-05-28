@@ -42,7 +42,10 @@ public class GitProperties {
             File folder = new File(folderLocation);
             boolean dir = folder.mkdirs();
             if (dir) {
-                File gitKeep = new File(new StringBuilder(folderLocation).append(File.separator).append(".gitkeep").toString());
+                File gitKeep = new File(
+                        new StringBuilder(folderLocation)
+                                .append(File.separator)
+                                .append(".gitkeep").toString());
                 gitKeep.createNewFile();
                 gitkeep.add(gitKeep);
             }
