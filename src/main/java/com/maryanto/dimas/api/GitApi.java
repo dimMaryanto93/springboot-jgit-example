@@ -56,10 +56,15 @@ public class GitApi {
                     .setCommitter(commitModel.getUsername(), commitModel.getEmail());
             commitCommand.call();
 
-            Iterable<RevCommit> listLog = gitCommand.log().call();
-            List<String> refObject = new ArrayList<>();
+            Iterable<RevCommit> listLog = gitCommand.log().setMaxCount(1).call();
+            List<GitCommit> refObject = new ArrayList<>();
             for (RevCommit log : listLog) {
-                refObject.add(log.getCommitterIdent().getEmailAddress());
+                GitCommit commit = new GitCommit();
+                commit.setId(log.getId().getName());
+                commit.setMessage(log.getFullMessage());
+                commit.setUsername(log.getCommitterIdent().getName());
+                commit.setEmail(log.getCommitterIdent().getEmailAddress());
+                refObject.add(commit);
             }
             return new ResponseEntity(refObject, HttpStatus.CREATED);
         } catch (java.lang.IllegalStateException ilste) {
