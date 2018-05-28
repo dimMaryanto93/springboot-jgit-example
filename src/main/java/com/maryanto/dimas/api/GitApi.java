@@ -2,9 +2,11 @@ package com.maryanto.dimas.api;
 
 import com.maryanto.dimas.config.GitProperties;
 import com.maryanto.dimas.model.GitCommit;
+import com.maryanto.dimas.model.GitLog;
 import org.eclipse.jgit.api.CommitCommand;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
+import org.eclipse.jgit.api.errors.NoHeadException;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.slf4j.Logger;
@@ -84,6 +86,36 @@ public class GitApi {
             return new ResponseEntity(HttpStatus.NO_CONTENT);
         } else {
             return new ResponseEntity(directories, HttpStatus.OK);
+        }
+    }
+
+    @GetMapping("/logs/{projectName}")
+    public ResponseEntity listLog(@PathVariable("projectName") String projectName) {
+        List<GitLog> listLog = new ArrayList<>();
+        try {
+            Git gitCommand = new Git(properties.getRepository(projectName));
+            Iterable<RevCommit> logs = gitCommand.log().call();
+            for (RevCommit log : logs) {
+                console.info("{}", log.getFooterLines());
+                listLog.add(new GitLog(
+                        log.toObjectId().getName(),
+                        log.getCommitterIdent().getName(),
+                        log.getCommitterIdent().getEmailAddress(),
+                        null,
+                        log.getFullMessage()
+                ));
+            }
+
+            return new ResponseEntity(listLog, HttpStatus.OK);
+        } catch (IOException e) {
+            e.printStackTrace();
+            return new ResponseEntity(HttpStatus.NO_CONTENT);
+        } catch (NoHeadException e) {
+            e.printStackTrace();
+            return new ResponseEntity(HttpStatus.NO_CONTENT);
+        } catch (GitAPIException e) {
+            e.printStackTrace();
+            return new ResponseEntity(HttpStatus.CONFLICT);
         }
     }
 
