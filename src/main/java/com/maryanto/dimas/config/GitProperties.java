@@ -31,17 +31,21 @@ public class GitProperties {
         return new File(uriRepository(projectName));
     }
 
-    public List<File> createFolder(String projectName, List<String> folderNames) {
+    public List<File> createFolder(String projectName, List<String> folderNames) throws IOException {
         List<File> gitkeep = new ArrayList<>();
-        for (String folder : folderNames) {
-            File file = new File(
-                    new StringBuilder(getBaseDirectory(projectName))
-                            .append(File.separator)
-                            .append(folder)
-                            .append(File.separator)
-                            .toString()
-            );
-            gitkeep.add(file);
+        for (String name : folderNames) {
+            String folderLocation = new StringBuilder(getBaseDirectory(projectName))
+                    .append(File.separator)
+                    .append(name)
+                    .append(File.separator)
+                    .toString();
+            File folder = new File(folderLocation);
+            boolean dir = folder.mkdirs();
+            if (dir) {
+                File gitKeep = new File(new StringBuilder(folderLocation).append(File.separator).append(".gitkeep").toString());
+                gitKeep.createNewFile();
+                gitkeep.add(gitKeep);
+            }
         }
         return gitkeep;
     }

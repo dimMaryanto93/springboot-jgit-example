@@ -10,6 +10,8 @@ import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.api.errors.NoFilepatternException;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -25,6 +27,8 @@ import java.util.List;
 @RequestMapping("/api/git")
 public class GitApi {
 
+    private final static Logger console = LoggerFactory.getLogger(GitApi.class);
+
     @Autowired
     private GitProperties properties;
 
@@ -33,24 +37,14 @@ public class GitApi {
             @PathVariable("projectName") String projectName,
             @RequestBody(required = false) GitCommit commitModel) {
         try {
-            Git gitCommand = new InitCommand().setGitDir(properties.getBaseGitDir(projectName)).call();
-            List<File> folders = properties.createFolder(projectName, Arrays.asList("SIT", "UIT"));
-            for (File folder : folders) {
-                if (!folder.exists()) {
-                    boolean created = folder.mkdirs();
-                    if (created) {
-                        File gitkeep = new File(
-                                new StringBuilder(folder.getCanonicalPath())
-                                        .append(File.separator)
-                                        .append(".gitkeep")
-                                        .toString());
-                        gitkeep.createNewFile();
-                    }
-                }
-            }
 
-            AddCommand addCommand = gitCommand.add().addFilepattern(".");
-            addCommand.call();
+            Repository repository = properties.getRepository(projectName);
+            repository.create();
+            Git gitCommand = new Git(repository);
+
+            List<File> folders = properties.createFolder(projectName, Arrays.asList("SIT", "UIT"));
+
+            gitCommand.add().addFilepattern(".").call();
 
             CommitCommand commitCommand = gitCommand.commit().setMessage("init project")
                     .setCommitter(commitModel.getUsername(), commitModel.getEmail());
@@ -66,7 +60,7 @@ public class GitApi {
                 commit.setEmail(log.getCommitterIdent().getEmailAddress());
                 refObject.add(commit);
             }
-            return new ResponseEntity(refObject, HttpStatus.CREATED);
+            return new ResponseEntity(refObject.get(0), HttpStatus.CREATED);
         } catch (java.lang.IllegalStateException ilste) {
             return new ResponseEntity(HttpStatus.CONFLICT);
         } catch (GitAPIException e) {
