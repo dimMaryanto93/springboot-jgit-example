@@ -7,7 +7,6 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class GitRepositoryConfiguration {
 
-
     @Bean
     public FileRepositoryBuilder getFileRepository() {
         return new FileRepositoryBuilder();

@@ -4,11 +4,16 @@ import com.maryanto.dimas.config.GitProperties;
 import com.maryanto.dimas.model.GitCommit;
 import com.maryanto.dimas.model.GitLog;
 import org.eclipse.jgit.api.CommitCommand;
+import org.eclipse.jgit.api.DiffCommand;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.api.errors.NoHeadException;
+import org.eclipse.jgit.diff.DiffEntry;
+import org.eclipse.jgit.lib.ObjectId;
+import org.eclipse.jgit.lib.ObjectReader;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
+import org.eclipse.jgit.treewalk.CanonicalTreeParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -78,7 +83,7 @@ public class GitApi {
         File directory = new File(basePath);
         File[] files = directory.listFiles();
         for (File dir : files) {
-            if (!dir.getName().equalsIgnoreCase(".git"))
+            if (!dir.getName().equalsIgnoreCase(".git") && dir.isDirectory())
                 directories.add(dir.getName());
         }
 
@@ -111,6 +116,36 @@ public class GitApi {
             e.printStackTrace();
             return new ResponseEntity(HttpStatus.NO_CONTENT);
         } catch (NoHeadException e) {
+            e.printStackTrace();
+            return new ResponseEntity(HttpStatus.NO_CONTENT);
+        } catch (GitAPIException e) {
+            e.printStackTrace();
+            return new ResponseEntity(HttpStatus.CONFLICT);
+        }
+    }
+
+    @GetMapping("/diff/{projectName}/files/{fileName}")
+    public ResponseEntity diffFileLastCommit(@PathVariable String projectName, @PathVariable String fileName) {
+        try {
+            Repository repository = properties.getRepository(projectName);
+            ObjectReader objectReader = repository.newObjectReader();
+            ObjectId idNow = repository.resolve("HEAD");
+            ObjectId idOld = repository.resolve("HEAD^");
+
+            CanonicalTreeParser newFile = new CanonicalTreeParser();
+            newFile.reset(objectReader, idNow);
+
+            CanonicalTreeParser oldFile = new CanonicalTreeParser();
+            oldFile.reset(objectReader, idOld);
+
+            Git gitCommand = new Git(repository);
+            DiffCommand diffCommand = gitCommand.diff();
+            List<DiffEntry> listDiff = diffCommand.setNewTree(newFile).setOldTree(oldFile).call();
+            for (DiffEntry diff : listDiff) {
+                console.info("informasi {}", diff);
+            }
+            return new ResponseEntity(HttpStatus.OK);
+        } catch (IOException e) {
             e.printStackTrace();
             return new ResponseEntity(HttpStatus.NO_CONTENT);
         } catch (GitAPIException e) {
