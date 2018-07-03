@@ -82,13 +82,13 @@ public class GitApi {
 
     @GetMapping("/directories/{projectName}")
     public ResponseEntity listDirectory(@PathVariable("projectName") String projectName) {
-        List<String> directories = new ArrayList<>();
+        List<Files> directories = new ArrayList<>();
         String basePath = properties.getBaseDirectory(projectName);
         File directory = new File(basePath);
         File[] files = directory.listFiles();
         for (File dir : files) {
             if (!dir.getName().equalsIgnoreCase(".git") && dir.isDirectory())
-                directories.add(dir.getName());
+                directories.add(new Files(dir.getName(), dir.isDirectory(), dir.getPath()));
         }
 
         if (directories.isEmpty()) return new ResponseEntity(HttpStatus.NO_CONTENT);
