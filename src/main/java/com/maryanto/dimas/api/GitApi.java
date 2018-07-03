@@ -46,17 +46,22 @@ public class GitApi {
         try {
 
             Repository repository = properties.getRepository(projectName);
+//            created git repository
             repository.create();
             Git gitCommand = new Git(repository);
 
+//            list folder created
             List<File> folders = properties.createFolder(projectName, Arrays.asList("SIT", "UIT"));
 
+//            git add .
             gitCommand.add().addFilepattern(".").call();
 
+//            git commit -m "init project"
             CommitCommand commitCommand = gitCommand.commit().setMessage("init project")
                     .setCommitter(commitModel.getUsername(), commitModel.getEmail());
             commitCommand.call();
 
+//            git log
             Iterable<RevCommit> listLog = gitCommand.log().setMaxCount(1).call();
             List<GitCommit> refObject = new ArrayList<>();
             for (RevCommit log : listLog) {
