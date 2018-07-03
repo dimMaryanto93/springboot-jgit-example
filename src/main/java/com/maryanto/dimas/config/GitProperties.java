@@ -1,8 +1,7 @@
 package com.maryanto.dimas.config;
 
 import org.eclipse.jgit.lib.Repository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Scope;
+import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 import org.springframework.stereotype.Component;
 
 import java.io.File;
@@ -11,11 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Component
-@Scope("prototype")
 public class GitProperties {
-
-    @Autowired
-    private GitRepositoryConfiguration git;
 
     private String uriRepository(String project) {
         return new StringBuilder(getBaseDirectory(project))
@@ -61,7 +56,7 @@ public class GitProperties {
     }
 
     public Repository getRepository(String projectName) throws IOException {
-        return git.getFileRepository()
+        return new FileRepositoryBuilder()
                 .setGitDir(getBaseGitDir(projectName))
                 .readEnvironment()
                 .setup()

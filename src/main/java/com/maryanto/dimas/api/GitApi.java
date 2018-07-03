@@ -1,6 +1,7 @@
 package com.maryanto.dimas.api;
 
 import com.maryanto.dimas.config.GitProperties;
+import com.maryanto.dimas.model.Files;
 import com.maryanto.dimas.model.GitCommit;
 import com.maryanto.dimas.model.GitLog;
 import org.eclipse.jgit.api.CommitCommand;
@@ -90,11 +91,24 @@ public class GitApi {
                 directories.add(dir.getName());
         }
 
-        if (directories.isEmpty()) {
-            return new ResponseEntity(HttpStatus.NO_CONTENT);
-        } else {
-            return new ResponseEntity(directories, HttpStatus.OK);
+        if (directories.isEmpty()) return new ResponseEntity(HttpStatus.NO_CONTENT);
+        else return new ResponseEntity(directories, HttpStatus.OK);
+    }
+
+    @GetMapping("/files/{projectName}")
+    public ResponseEntity listFiles(@PathVariable("projectName") String projectName) {
+        List<Files> files = new ArrayList<>();
+        String basePath = properties.getBaseDirectory(projectName);
+        File file = new File(basePath);
+        File[] tempFiles = file.listFiles();
+        for (File aFile : tempFiles) {
+            if (!aFile.getName().equalsIgnoreCase(".git")) {
+                files.add(new Files(aFile.getName(), aFile.isDirectory(), aFile.getPath()));
+            }
         }
+
+        if (files.isEmpty()) return new ResponseEntity(HttpStatus.NO_CONTENT);
+        else return new ResponseEntity(files, HttpStatus.OK);
     }
 
     @GetMapping("/logs/{projectName}")
