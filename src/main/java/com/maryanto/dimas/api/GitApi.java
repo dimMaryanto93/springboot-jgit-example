@@ -5,16 +5,11 @@ import com.maryanto.dimas.model.Files;
 import com.maryanto.dimas.model.GitCommit;
 import com.maryanto.dimas.model.GitLog;
 import org.eclipse.jgit.api.CommitCommand;
-import org.eclipse.jgit.api.DiffCommand;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.api.errors.NoHeadException;
-import org.eclipse.jgit.diff.DiffEntry;
-import org.eclipse.jgit.lib.ObjectId;
-import org.eclipse.jgit.lib.ObjectReader;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
-import org.eclipse.jgit.treewalk.CanonicalTreeParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -120,7 +115,8 @@ public class GitApi {
     public ResponseEntity listLog(@PathVariable("projectName") String projectName) {
         List<GitLog> listLog = new ArrayList<>();
         try {
-            Git gitCommand = new Git(properties.getRepository(projectName));
+            Repository repository = properties.getRepository(projectName);
+            Git gitCommand = new Git(repository);
             Iterable<RevCommit> logs = gitCommand.log().call();
             for (RevCommit log : logs) {
                 StringBuilder sb = new StringBuilder();
@@ -135,41 +131,12 @@ public class GitApi {
                 ));
             }
 
+            repository.close();
             return new ResponseEntity(listLog, HttpStatus.OK);
         } catch (IOException e) {
             e.printStackTrace();
             return new ResponseEntity(HttpStatus.NO_CONTENT);
         } catch (NoHeadException e) {
-            e.printStackTrace();
-            return new ResponseEntity(HttpStatus.NO_CONTENT);
-        } catch (GitAPIException e) {
-            e.printStackTrace();
-            return new ResponseEntity(HttpStatus.CONFLICT);
-        }
-    }
-
-    @GetMapping("/diff/{projectName}/files/{fileName}")
-    public ResponseEntity diffFileLastCommit(@PathVariable String projectName, @PathVariable String fileName) {
-        try {
-            Repository repository = properties.getRepository(projectName);
-            ObjectReader objectReader = repository.newObjectReader();
-            ObjectId idNow = repository.resolve("HEAD");
-            ObjectId idOld = repository.resolve("HEAD^");
-
-            CanonicalTreeParser newFile = new CanonicalTreeParser();
-            newFile.reset(objectReader, idNow);
-
-            CanonicalTreeParser oldFile = new CanonicalTreeParser();
-            oldFile.reset(objectReader, idOld);
-
-            Git gitCommand = new Git(repository);
-            DiffCommand diffCommand = gitCommand.diff();
-            List<DiffEntry> listDiff = diffCommand.setNewTree(newFile).setOldTree(oldFile).call();
-            for (DiffEntry diff : listDiff) {
-                console.info("informasi {}", diff);
-            }
-            return new ResponseEntity(HttpStatus.OK);
-        } catch (IOException e) {
             e.printStackTrace();
             return new ResponseEntity(HttpStatus.NO_CONTENT);
         } catch (GitAPIException e) {
