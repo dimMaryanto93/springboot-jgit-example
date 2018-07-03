@@ -20,6 +20,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.context.annotation.RequestScope;
 
 import java.io.File;
 import java.io.IOException;
@@ -36,6 +37,7 @@ public class GitApi {
     @Autowired
     private GitProperties properties;
 
+    @RequestScope
     @PostMapping("/create/{projectName}")
     public ResponseEntity createProject(
             @PathVariable("projectName") String projectName,
@@ -64,6 +66,7 @@ public class GitApi {
                 commit.setEmail(log.getCommitterIdent().getEmailAddress());
                 refObject.add(commit);
             }
+            repository.close();
             return new ResponseEntity(refObject.get(0), HttpStatus.CREATED);
         } catch (java.lang.IllegalStateException ilste) {
             return new ResponseEntity(HttpStatus.CONFLICT);
@@ -101,12 +104,14 @@ public class GitApi {
             Git gitCommand = new Git(properties.getRepository(projectName));
             Iterable<RevCommit> logs = gitCommand.log().call();
             for (RevCommit log : logs) {
+                StringBuilder sb = new StringBuilder();
+
                 console.info("{}", log.getFooterLines());
                 listLog.add(new GitLog(
                         log.toObjectId().getName(),
                         log.getCommitterIdent().getName(),
                         log.getCommitterIdent().getEmailAddress(),
-                        null,
+                        log.toString(),
                         log.getFullMessage()
                 ));
             }
